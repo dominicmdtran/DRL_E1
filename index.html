@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Task</title>
+  <script src="jspsych-6-2/jspsych.js"></script>
+  <script src="jspsych-6-2/plugins/jspsych-html-keyboard-response.js"></script>
+  <script src="jspsych-6-2/plugins/jspsych-instructions.js"></script>
+  <script src="jspsych-6-2/plugins/jspsych-survey-text.js"></script>
+  <script src="jspsych-6-2/plugins/jspsych-survey-multi-choice.js"></script>
+  <script src="jspsych-6-2/plugins/jspsych-call-function.js"></script> 
+  <script src="jspsych-6-2/plugins/jspsych-fullscreen.js"></script>
+  <script src="scripts/participant_info.js"></script>
+  <link href="jspsych-6-2/css/jspsych.css" rel="stylesheet" type="text/css" />
+</head>
+
+<body></body>
+
+<script>
+
+  const timeline = [];
+
+// Parse URL parameters
+const urlParams = new URLSearchParams(window.location.search);
+
+// Try to get SONA participant ID (example keys)
+const sonaParticipantID = urlParams.get('participant_id') || urlParams.get('id');
+
+// Try to get Prolific IDs
+const prolificPID = urlParams.get('PROLIFIC_PID');
+
+// Decide which ID to use (priority: Prolific PID, then SONA)
+const participantID = prolificPID || sonaParticipantID || jsPsych.randomization.randomID(10); ;
+
+
+const enter_fullscreen = {
+ type: 'fullscreen',
+ fullscreen_mode: true,
+ message: '<p>The experiment will switch to fullscreen mode when you push the button below. </p>',
+ button_label: 'Next'
+};
+
+
+  // Parameters
+  var experimentname = "DRL_E1";
+
+  const square_colours = [
+    { hex: '#0072b2', name: 'blue' },
+    { hex: '#e69f00', name: 'orange' },
+    { hex: '#009E73', name: 'green' }
+  ];
+  const shuffle_colors = jsPsych.randomization.shuffle(square_colours);
+
+  const DRL_times = ['5', '10', '30']
+
+  jsPsych.data.addProperties({
+    experiment_name: experimentname,
+    participant_id: participantID,
+    prolific_pid: prolificPID,
+    sona_participant_id: sonaParticipantID
+  });
+
+  // Demographics
+  var demo_1 = {
+    type: 'survey-text',
+    questions: [
+      { prompt: "How old are you?", name: 'Age', required: true }
+    ]
+  };
+
+  var demo_2 = {
+    type: 'survey-multi-choice',
+    questions: [
+      {
+        prompt: "Sex:",
+        name: 'Sex',
+        options: ["Male", "Female", "Prefer not to say"],
+        required: true
+      }
+    ]
+  };
+
+  // Instructions
+  var instructions = {
+    type: 'instructions',
+    pages: [
+      '<p>In this task, your goal is to earn as many points as possible by pressing the spacebar when you see coloured squares. </p>',
+      '<p>On each trial, the colour of the square tells you how long to wait before pressing the spacebar.</p>' +
+      `<p><div style="display:inline-block; width:20px; height:20px; background-color:${shuffle_colors[0].hex};  margin-right:8px;"></div> = wait ${DRL_times[0]} seconds to press</p>` +
+      `<p><div style="display:inline-block; width:20px; height:20px; background-color:${shuffle_colors[1].hex};  margin-right:8px;"></div>  = wait ${DRL_times[1]} seconds to press</p>` +
+      `<p><div style="display:inline-block; width:20px; height:20px; background-color:${shuffle_colors[2].hex};  margin-right:8px;"></div>  = wait ${DRL_times[2]} seconds to press</p>` +
+      `<p>You must press the spacebar <strong>after the wait</strong> but <strong>within a short period of that time to earn points</strong>. If you wait too long, the trial will time out and you will earn no points. </p>`,
+      '<p>Please do not use a timer or a clock to guide your responses, you must judge the timing of your responses on your own. </p>'
+    ],
+    show_clickable_nav: true
+  };
+
+  // Practice Instructions
+  var practice_instructions = {
+    type: 'instructions',
+    pages: [
+    `<p>Start with a couple of practice trials.</p>
+     <p>There will be one ${DRL_times[0]} second trial, and one ${DRL_times[1]} second trial.</p>`
+  ],
+    show_clickable_nav: true
+  };
+
+    // Start Instructions
+  var start_instructions = {
+    type: 'instructions',
+    pages: [
+      '<p> Now time for the real thing. There will be four blocks of about 5 minutes each, with a short break between blocks. </p>',
+      '<p>Remember the following for pressing the spacebar: </p>' +
+      `<p><div style="display:inline-block; width:20px; height:20px; border-radius: 3px; background-color:${shuffle_colors[0].hex};  margin-right:8px;"></div> = wait ${DRL_times[0]} seconds to press</p>` +
+      `<p><div style="display:inline-block; width:20px; height:20px; border-radius: 3px; background-color:${shuffle_colors[1].hex};  margin-right:8px;"></div>  = wait ${DRL_times[1]} seconds to press</p>` +
+      `<p><div style="display:inline-block; width:20px; height:20px; border-radius: 3px; background-color:${shuffle_colors[2].hex};  margin-right:8px;"></div>  = wait ${DRL_times[2]} seconds to press</p>` +
+      `<p>Click next when you're ready to start. </p>`
+    ],
+    show_clickable_nav: true
+  };
+
+  const trial_conditions = [
+    { color: shuffle_colors[0].hex, duration: 5000, response_window: 1500, points: 10, trial_type: "DRL5" },
+    { color: shuffle_colors[1].hex, duration: 10000, response_window: 3000, points: 20, trial_type: "DRL10" },
+    { color: shuffle_colors[2].hex, duration: 30000, response_window: 9000, points: 60, trial_type: "DRL30" }
+  ];
+
+
+  const stimulus_trial = {
+  type: 'html-keyboard-response',
+  stimulus: function () {
+    const color = jsPsych.timelineVariable('color', true);
+    const duration_ms = jsPsych.timelineVariable('duration', true);
+    const seconds = duration_ms / 1000;
+
+    return `
+      <div style="height:400px; display:flex; align-items:center; justify-content:center;">
+        <div style="
+          width: 100px;
+          height: 100px;
+          background-color: ${color};
+          color: white;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 28px;
+          font-weight: bold;
+          border-radius: 3px;
+        ">
+          ${seconds}s
+        </div>
+      </div>
+    `;
+  },
+  choices: [' '],
+  trial_duration: function () {
+    const duration = jsPsych.timelineVariable('duration', true);
+    const response_window = jsPsych.timelineVariable('response_window', true);
+    return duration + response_window;
+  },
+    on_finish: function (data) {
+      const trial_type = jsPsych.timelineVariable('type', true);
+      const color = jsPsych.timelineVariable('color', true);
+      const duration = jsPsych.timelineVariable('duration', true);
+      const response_window = jsPsych.timelineVariable('response_window', true);
+      const points = jsPsych.timelineVariable('points', true);
+
+      const rt = data.rt;
+      const wait_min = duration;
+      const wait_max = duration + response_window;
+
+      if (rt === null) {
+        data.feedback = "Too late!";
+        data.points_awarded = 0;
+      } else if (rt < wait_min) {
+        data.feedback = "Too early!";
+        data.points_awarded = 0;
+      } else if (rt >= wait_min && rt <= wait_max) {
+        data.feedback = `+${points} points`;
+        data.points_awarded = points;
+      } else {
+        data.feedback = "Too late!";
+        data.points_awarded = 0;
+      }
+
+      data.trial_type = trial_type;
+      data.color = color;
+      data.duration = duration;
+      data.response_window = response_window;
+
+    }
+  };
+
+
+  
+const feedback_trial = {
+ type: 'html-keyboard-response',
+ stimulus: function () {
+ const last = jsPsych.data.get().last(1).values()[0];
+ const total = jsPsych.data.get().select('points_awarded').sum();
+
+ // Determine background color based on feedback
+ let bgColor = '#D3D3D3'; // default grey
+ if (last.feedback === "Too early!" || last.feedback === "Too late!") {
+ bgColor = '#FF4C4C'; // red for early or late response
+ }
+
+ return `
+ <div style="height:200px; display:flex; align-items:center; justify-content:center; position:relative;">
+ <div style="width:100px; height:100px; border-radius: 3px; background-color:${bgColor}; display:flex; align-items:center; justify-content:center; font-size:18px; position:absolute;">
+ <strong>${last.feedback}</strong>
+ </div>
+ <p style="text-align:center; font-size:16px; margin-top:200px;">
+ Total Points: ${total}
+ </p>
+ </div>
+ `;
+ },
+ choices: "NO_KEYS",
+ trial_duration: 2000
+};
+
+
+
+  const ITI = {
+    type: 'html-keyboard-response',
+    stimulus: '',
+    choices: "NO_KEYS",
+    trial_duration: 500
+  };
+
+  // Create a block of trials containing 5 DRL5 trials, 5 DRL10 trials, and 1 DRL30 at the end.
+  function createBlock(block_number) {
+    // Create 5 DRL5 trials and 5 DRL20 trials
+    let block_trials = [
+      ...Array(5).fill(trial_conditions[0]), // 
+      ...Array(5).fill(trial_conditions[1]), // 
+    ];
+
+    // Randomize the order of the DRL5 and DRL10 trials
+    block_trials = jsPsych.randomization.shuffle(block_trials);
+
+    // Add the DRL40 trial at the end
+    block_trials.push(trial_conditions[2]);
+
+    // Return the block as a timeline for jsPsych
+    return {
+      timeline: [stimulus_trial, feedback_trial, ITI],
+      timeline_variables: block_trials,
+      randomize_order: false, // keep this false so DRL40 is at the end
+      data: { block: block_number }
+    };
+  }
+
+  // Create 8 blocks
+  const block1 = createBlock(1);
+  const block2 = createBlock(2);
+  const block3 = createBlock(3);
+  const block4 = createBlock(4);
+  const block5 = createBlock(5);
+  const block6 = createBlock(6);
+  const block7 = createBlock(7);
+  const block8 = createBlock(8);
+
+  // Create a practice block
+  function createPractice() {
+    // One short and one medium trial
+    let practice_trials = [
+      ...Array(1).fill(trial_conditions[0]), //  DRL5 trial
+      ...Array(1).fill(trial_conditions[1]), //  DRL10 trial
+    ];
+
+    // Return the block as a timeline for jsPsych
+    return {
+      timeline: [stimulus_trial, feedback_trial, ITI],
+      timeline_variables: practice_trials,
+      randomize_order: false, // keep this false so DRL30 is at the end
+      data: { block: "practice" }
+    };
+  }
+  
+  const practice_block = createPractice();
+
+
+const reset_points = {
+ type: 'call-function',
+ func: function() {
+ const all_data = jsPsych.data.get().values();
+ const filtered_data = all_data.filter(trial => trial.block !== 'practice');
+ jsPsych.data.reset(); // Clear all data
+ jsPsych.data.write(filtered_data); // Write back only non-practice data
+ }
+};
+
+
+// Create break screen with 
+let countdownTime = 20; // seconds
+
+let break_screen = {
+  type: 'html-keyboard-response',
+  stimulus: function() {
+    return `<div id="instruction-text">
+              <p>Have a short break.</p>
+
+              <p>Continuing in <span id="countdown">${countdownTime}</span> seconds...</p>
+            </div>`;
+  },
+  choices: jsPsych.NO_KEYS, // disable user input
+  trial_duration: countdownTime * 1000, // auto-advance after 30s
+  on_load: function() {
+    let timeLeft = countdownTime;
+    let countdownElem = document.getElementById('countdown');
+    
+    let interval = setInterval(() => {
+      timeLeft--;
+      if (timeLeft <= 0) {
+        clearInterval(interval);
+        countdownElem.textContent = '0';
+      } else {
+        countdownElem.textContent = timeLeft;
+      }
+    }, 1000);
+  }
+};
+
+
+const final_score_screen = {
+  type: 'html-keyboard-response',
+  stimulus: function () {
+    const total = jsPsych.data.get().select('points_awarded').sum();
+    return `
+      <div style="text-align:center; font-size:24px; padding:40px;">
+        <p>Thank you for completing the task!</p>
+        <p><strong>You earned a total of ${total} points.</strong></p>
+        <p>Press any key to move on to the next task.</p>
+      </div>
+    `;
+  }
+};
+
+
+  // Add everything to the timeline
+  timeline.push(
+    participant_info,
+    demo_1, demo_2, 
+    enter_fullscreen,
+    instructions, 
+    practice_instructions, practice_block, reset_points,
+    start_instructions, 
+    block1, block2, break_screen, 
+    block3, block4, break_screen, 
+    block5, block6, break_screen, 
+    block7, block8,
+    final_score_screen);
+
+ // jsPsych.init({
+ //   timeline: timeline
+ // });
+
+
+  // ONLY FOR LOCAL RUNNING
+//   jsPsych.init({
+//   timeline: timeline,
+//   on_finish: function() {
+//     const csv = jsPsych.data.get().csv();
+//     const blob = new Blob([csv], { type: 'text/csv' });
+//     const url = URL.createObjectURL(blob);
+    
+//     const a = document.createElement('a');
+//     a.href = url;
+//     a.download = 'experiment_data.csv';
+//     a.click();
+//   }
+// });
+
+
+jsPsych.init({
+  timeline: timeline,
+  on_finish: function() {
+    if (window.location.protocol === 'file:') {
+      // Running locally - manual button
+      document.body.innerHTML = `
+        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; font-family: sans-serif; text-align: center;">
+          <p style="font-size: 1.5em; margin-bottom: 1em;">Thanks for finishing part 1!</p>
+          <button id="goToPart2" style="padding: 0.75em 1.5em; font-size: 1em; border: none; border-radius: 5px; background-color: #4CAF50; color: white; cursor: pointer;">
+            Start Part 2
+          </button>
+        </div>
+      `;
+      document.getElementById('goToPart2').addEventListener('click', function() {
+        window.location.href = `SST/experiment-50only.html?participantID=${participantID}`;
+;
+      });
+    } else {
+      // Running on server - auto redirect
+      window.location.href = `SST/experiment-50only.html?participantID=${participantID}`;
+;
+    }
+  }
+});
+
+</script>
+
+</html>
