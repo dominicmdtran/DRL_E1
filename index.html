@@ -38,14 +38,39 @@ const participantID = prolificPID || sonaParticipantID || jsPsych.randomization.
 const filename = `${participantID}.csv`;
 
 
-const save_data = {
+/* const save_data = {
     type: jsPsychPipe,
     action: "save",
     experiment_id: DataPipe_ID,
     filename: filename,
     data_string: ()=>jsPsych.data.get().csv()
-  };
+  }; */
             
+
+  function sendDataToDataPipe(data) {
+  const experimentID = 'ud5iLnD5akM1';
+  const filename = jsPsych.randomization.randomID(10) + '.csv'; // or .json
+
+  fetch('https://pipe.jspsych.org/api/save', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      experiment_id: experimentID,
+      filename: filename,
+      data_string: data
+    })
+  })
+  .then(response => response.json())
+  .then(result => {
+    console.log('DataPipe response:', result);
+  })
+  .catch(error => {
+    console.error('Error sending data to DataPipe:', error);
+  });
+}
+
 
 const enter_fullscreen = {
  type: 'fullscreen',
@@ -361,12 +386,12 @@ const final_score_screen = {
     instructions, 
     practice_instructions, practice_block, reset_points,
     start_instructions, 
-    block1, block2, break_screen, 
+    //block1, block2, break_screen, 
     block3, block4, break_screen, 
     block5, block6, break_screen, 
     block7, block8,
-    final_score_screen, 
-    save_data);
+    final_score_screen);
+    //save_data);
 
  // jsPsych.init({
  //   timeline: timeline
@@ -389,7 +414,7 @@ const final_score_screen = {
 // });
 
 
-jsPsych.init({
+/* jsPsych.init({
   timeline: timeline,
   on_finish: function() {
     if (window.location.protocol === 'file:') {
@@ -412,7 +437,57 @@ jsPsych.init({
 ;
     }
   }
+}); */
+
+jsPsych.init({
+  timeline: timeline,
+  on_finish: function() {
+    var data = jsPsych.data.get().csv(); // or .json()
+    const experimentID = 'ud5iLnD5akM1';
+    const filename = jsPsych.randomization.randomID(10) + '.csv';
+
+    // Send data to DataPipe
+    fetch('https://pipe.jspsych.org/api/save', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        experiment_id: experimentID,
+        filename: filename,
+        data_string: data
+      })
+    })
+    .then(response => response.json())
+    .then(result => {
+      console.log('DataPipe response:', result);
+
+      // Now redirect or show button
+      if (window.location.protocol === 'file:') {
+        document.body.innerHTML = `
+          <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; font-family: sans-serif; text-align: center;">
+            <p style="font-size: 1.5em; margin-bottom: 1em;">Thanks for finishing part 1!</p>
+            <button id="goToPart2" style="padding: 0.75em 1.5em; font-size: 1em; border: none; border-radius: 5px; background-color: #4CAF50; color: white; cursor: pointer;">
+              Start Part 2
+            </button>
+          </div>
+        `;
+        document.getElementById('goToPart2').addEventListener('click', function() {
+          window.location.href = `SST/experiment-50only.html?participantID=${participantID}`;
+        });
+      } else {
+        window.location.href = `SST/experiment-50only.html?participantID=${participantID}`;
+      }
+    })
+    .catch(error => {
+      console.error('Error sending data to DataPipe:', error);
+      alert('There was a problem saving your data. Please contact the researcher.');
+    });
+  }
 });
+
+
+
 
 </script>
 
