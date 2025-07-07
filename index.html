@@ -11,6 +11,7 @@
   <script src="jspsych-6-2/plugins/jspsych-call-function.js"></script> 
   <script src="jspsych-6-2/plugins/jspsych-fullscreen.js"></script>
   <script src="scripts/participant_info.js"></script>
+  <script src="https://unpkg.com/@jspsych-contrib/plugin-pipe"></script>
   <link href="jspsych-6-2/css/jspsych.css" rel="stylesheet" type="text/css" />
 </head>
 
@@ -18,9 +19,10 @@
 
 <script>
 
-const timeline = [];
+  const timeline = [];
 
-const DataPipe_ID = "ud5iLnD5akM1";
+//set DataPipe
+const DataPipe_ID = "ud5iLnD5akM1" // The DataPipe ID for where the data should be stored
 
 // Parse URL parameters
 const urlParams = new URLSearchParams(window.location.search);
@@ -33,7 +35,17 @@ const prolificPID = urlParams.get('PROLIFIC_PID');
 
 // Decide which ID to use (priority: Prolific PID, then SONA)
 const participantID = prolificPID || sonaParticipantID || jsPsych.randomization.randomID(10); ;
+const filename = `${participantID}.csv`;
 
+
+const save_data = {
+    type: jsPsychPipe,
+    action: "save",
+    experiment_id: DataPipe_ID,
+    filename: filename,
+    data_string: ()=>jsPsych.data.get().csv()
+  };
+            
 
 const enter_fullscreen = {
  type: 'fullscreen',
@@ -353,7 +365,8 @@ const final_score_screen = {
     block3, block4, break_screen, 
     block5, block6, break_screen, 
     block7, block8,
-    final_score_screen);
+    final_score_screen, 
+    save_data);
 
  // jsPsych.init({
  //   timeline: timeline
