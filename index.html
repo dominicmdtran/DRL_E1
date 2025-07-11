@@ -418,6 +418,13 @@ const final_score_screen = {
 jsPsych.init({
  timeline: timeline,
  on_finish: function() {
+
+ document.body.innerHTML = `
+ <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; font-family: sans-serif; text-align: center;">
+ <p style="font-size: 1.5em; margin-bottom: 1em;">You have finished Part 1! Please wait while your data saves and you are redirected to Part 2</p>
+ </div>
+ `;
+
  // Convert jsPsych data to CSV string
  const dataAsString = jsPsych.data.get().csv();
  const filename = `participant_${participantID}_${Date.now()}.csv`;
