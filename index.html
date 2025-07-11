@@ -351,6 +351,27 @@ const final_score_screen = {
   }
 };
 
+var delayTrial = {
+  type: 'html-keyboard-response',
+  stimulus: '<p>Uploading your data...</p><p id="countdown">10</p>',
+  choices: jsPsych.NO_KEYS,
+  trial_duration: 10000,
+  on_start: function(trial) {
+    trial.stimulus = '<p>Uploading your data...</p><p id="countdown">10</p>';
+  },
+  on_load: function() {
+    var timeLeft = 10;
+    var countdownEl = document.getElementById('countdown');
+    var countdownInterval = setInterval(function() {
+      timeLeft -= 1;
+      if (timeLeft <= 0) {
+        clearInterval(countdownInterval);
+      } else {
+        countdownEl.textContent = timeLeft;
+      }
+    }, 1000);
+  }
+};
 
   // Add everything to the timeline
   timeline.push(
@@ -360,11 +381,12 @@ const final_score_screen = {
     instructions, 
     practice_instructions, practice_block, reset_points,
     start_instructions, 
-    //block1, block2, break_screen, 
-    //block3, block4, break_screen, 
-    //block5, block6, break_screen, 
-    //block7, block8,
-    final_score_screen);
+    block1, block2, break_screen, 
+    block3, block4, break_screen, 
+    block5, block6, break_screen, 
+    block7, block8,
+    final_score_screen,
+    delayTrial);
 
  // jsPsych.init({
  //   timeline: timeline
@@ -460,7 +482,7 @@ jsPsych.init({
  // Running on server - auto redirect
  document.body.innerHTML = `
  <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; font-family: sans-serif; text-align: center;">
- <p style="font-size: 1.5em; margin-bottom: 1em;">You have finished Part 1! Please wait while your data saves and you are redirected to Part 2.</p>
+ <p style="font-size: 1.5em; margin-bottom: 1em;">You have finished Part 1! Please wait while you are redirected to Part 2.</p>
  </div>
  `;
  window.location.href = `SST/experiment-50only.html?participantID=${participantID}`;
