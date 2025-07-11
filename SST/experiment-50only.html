@@ -51,7 +51,7 @@ DESCRIPTION: This is the jsPsych version of the stop-signal task
 
   <script src="configuration/text_variables.js"></script> <!-- holds all the text variables for easy modification/translation -->
 
-  <script src="https://unpkg.com/@jspsych-contrib/plugin-pipe"></script>
+  <script src="https://cdn.jsdelivr.net/gh/jspsych-contrib/plugin-pipe@0.4.3/dist/jspsych-pipe.min.js"></script>
   <link href="js/jspsych-6.0.5/css/jspsych.css" rel="stylesheet" type="text/css"></link> <!-- standard jsPsych css stylesheet -->
 
 </head>
@@ -341,13 +341,13 @@ redirect_link = 'https://url.au.m.mimecastprotect.com/s/aGxHC3QNPBi2Bv9K9Ugf5hQZ
   // set things for datapipe
   const DataPipe_ID = "ud5iLnD5akM1"
   const filename = `${participant_id}.csv`;
-  const save_data = {
-    type: jsPsychPipe,
+  /* const save_data = {
+    type: 'pipe',
     action: "save",
     experiment_id: DataPipe_ID,
     filename: filename,
     data_string: ()=>jsPsych.data.get().csv()
-  };
+  }; */
 
   // get participant's age and add it to the datafile
 
@@ -1029,7 +1029,7 @@ redirect_link = 'https://url.au.m.mimecastprotect.com/s/aGxHC3QNPBi2Bv9K9Ugf5hQZ
 
   // finally, push all the procedures to the overall timeline
 
-  timeline.push(start_procedure, block_procedure, end_procedure, save_data)
+  timeline.push(start_procedure, block_procedure, end_procedure)
 
 
 
@@ -1146,19 +1146,55 @@ redirect_link = 'https://url.au.m.mimecastprotect.com/s/aGxHC3QNPBi2Bv9K9Ugf5hQZ
 
     },
 
-    on_finish: function() {
-  //alert(jsPsych.data.get().csv());
-  /*
-      if (redirect_onCompletion){
+on_finish: function() {
 
-        setTimeout("location.href = '" + redirect_link + "';",redirect_timeout); // redirect to another URL with a certain delay, only when redirect_onCompletion is set to 'true'
+ // Show message to participant
+ document.body.innerHTML = `
+ <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; font-family: sans-serif; text-align: center;">
+ <p style="font-size: 1.5em; margin-bottom: 1em;">You have finished Part 2! Please wait while your data saves and you are redirected to the final part</p>
+ </div>
+ `;
 
-      }
-*/
+  const dataAsString = jsPsych.data.get().csv();
+  const participantID = jsPsych.data.get().values()[0]?.participantID || "unknown";
+  const filename = `SST_50first_data_${participantID}_${Date.now()}.csv`;
+
+  fetch("https://pipe.jspsych.org/api/data/", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "*/*",
     },
+    body: JSON.stringify({
+      experimentID: "ud5iLnD5akM1", // Replace with your actual experiment ID
+      filename: filename,
+      data: dataAsString,
+    }),
+  })
+  .then(response => {
+    if (!response.ok) {
+      throw new Error("Failed to upload data");
+    }
+    return response.json();
+  })
+  .then(() => {
+    console.log("Data successfully uploaded.");
+    if (redirect_onCompletion) {
+      setTimeout(() => {
+        location.href = redirect_link;
+      }, redirect_timeout);
+    }
+  })
+  .catch(error => {
+    console.error("Data upload failed:", error);
+    alert("There was an error saving your data. Please contact the researcher.");
+  });
+}
+
 
   })
- function saveData(csv) {
+
+/*  function saveData(csv) {
         var xhr = new XMLHttpRequest();
         xhr.open('POST', 'SaveToFile.aspx'); // change 'write_data.php' to point to php script.
         xhr.setRequestHeader('Content-Type', 'application/csv');
@@ -1169,7 +1205,7 @@ redirect_link = 'https://url.au.m.mimecastprotect.com/s/aGxHC3QNPBi2Bv9K9Ugf5hQZ
             }
         };
         xhr.send(csv);
-    }
+    } */
 </script>
 
 
