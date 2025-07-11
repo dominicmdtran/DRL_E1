@@ -94,6 +94,17 @@ const enter_fullscreen = {
   };
 
   // Instructions
+
+    var part_instructions = {
+    type: 'instructions',
+    pages: [
+      '<p>This study involves THREE tasks. </p>',
+      '<p>You will be automatically redirected between tasks. Please be patient while the next task is loading.</p>' +
+      '<p>You will be credited when you have completed the final part. </p>'
+    ],
+    show_clickable_nav: true
+  };
+
   var instructions = {
     type: 'instructions',
     pages: [
@@ -378,6 +389,7 @@ var delayTrial = {
     participant_info,
     demo_1, demo_2, 
     enter_fullscreen,
+    part_instructions,
     instructions, 
     practice_instructions, practice_block, reset_points,
     start_instructions, 
