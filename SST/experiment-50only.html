@@ -1189,13 +1189,6 @@ var delayTrial = {
 
 on_finish: function() {
 
- // Show message to participant
- document.body.innerHTML = `
- <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; font-family: sans-serif; text-align: center;">
- <p style="font-size: 1.5em; margin-bottom: 1em;">You have finished Part 2! Please wait while your data saves and you are redirected to the final part</p>
- </div>
- `;
-
   const dataAsString = jsPsych.data.get().csv();
   const filename = `SST_50first_data_${participantID}_${Date.now()}.csv`;
 
@@ -1220,8 +1213,15 @@ on_finish: function() {
   .then(() => {
     console.log("Data successfully uploaded.");
     if (redirect_onCompletion) {
+      document.body.innerHTML = `
+        <div style="font-size: 1.5em; text-align: center; margin-top: 20%;">
+          Thank you for completing Part 2.<br><br>
+          Please wait while you're being redirected to the final part...
+        </div>
+      `;
       setTimeout(() => {
-        location.href = redirect_link;
+        location.href = `${redirect_link}?participantID=${participantID}`;
+;
       }, redirect_timeout);
     }
   })
