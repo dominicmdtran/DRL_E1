@@ -1044,32 +1044,33 @@ redirect_link = 'https://url.au.m.mimecastprotect.com/s/aGxHC3QNPBi2Bv9K9Ugf5hQZ
 
 
   
-const waitDataTrial = {
+var delayTrial = {
   type: 'html-keyboard-response',
-  stimulus: function() {
-    return `
-      <p>Please wait while your data is being saved...</p>
-      <p id="countdown" style="font-size: 2em; font-weight: bold;">10</p>
-      <script>
-        let seconds = 10;
-        const countdownElement = document.getElementById('countdown');
-        const interval = setInterval(() => {
-          seconds--;
-          if (countdownElement) countdownElement.textContent = seconds;
-          if (seconds <= 0) clearInterval(interval);
-        }, 1000);
-      </script>
-    `;
+  stimulus: '<p>Uploading your data...</p><p id="countdown">10</p>',
+  choices: jsPsych.NO_KEYS,
+  trial_duration: 10000,
+  on_start: function(trial) {
+    trial.stimulus = '<p>Uploading your data...</p><p id="countdown">10</p>';
   },
-  choices: "NO_KEYS",
-  trial_duration: 10000
+  on_load: function() {
+    var timeLeft = 10;
+    var countdownEl = document.getElementById('countdown');
+    var countdownInterval = setInterval(function() {
+      timeLeft -= 1;
+      if (timeLeft <= 0) {
+        clearInterval(countdownInterval);
+      } else {
+        countdownEl.textContent = timeLeft;
+      }
+    }, 1000);
+  }
 };
 
 
 
   // finally, push all the procedures to the overall timeline
 
-  timeline.push(start_procedure, block_procedure, waitDataTrial) // end_procedure)
+  timeline.push(start_procedure, block_procedure, delayTrial)
 
 
 
@@ -1191,7 +1192,7 @@ on_finish: function() {
  // Show message to participant
  document.body.innerHTML = `
  <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; font-family: sans-serif; text-align: center;">
- <p style="font-size: 1.5em; margin-bottom: 1em;">You have finished Part 2! Please wait while you are redirected to the final part</p>
+ <p style="font-size: 1.5em; margin-bottom: 1em;">You have finished Part 2! Please wait while your data saves and you are redirected to the final part</p>
  </div>
  `;
 
