@@ -892,7 +892,7 @@ redirect_link = 'https://url.au.m.mimecastprotect.com/s/aGxHC3QNPBi2Bv9K9Ugf5hQZ
 
   // only go into fullscreen mode if 'fullscreen' is true
 
-  if (id == "participant"){
+ /*  if (id == "participant"){
 
     if (fullscreen){
 
@@ -934,9 +934,26 @@ redirect_link = 'https://url.au.m.mimecastprotect.com/s/aGxHC3QNPBi2Bv9K9Ugf5hQZ
 
       }
 
-  }
+  } */
 
+// just get participant ID from the url and define the start_timeline
 
+ // Extract participantID from URL
+ const urlParams = new URLSearchParams(window.location.search);
+ const participantID = urlParams.get('participantID') || jsPsych.randomization.randomID(10);
+ jsPsych.data.addProperties({participantID: participantID});
+
+      if (fullscreen) {
+
+        var start_timeline = [//welcome, consent, age, gender, 
+        fullscr, instructions]
+
+      } else {
+
+        var start_timeline = [//welcome, consent, age, gender, 
+        instructions]
+
+      }
 
   // start the experiment with the previously defined start_timeline trials
 
@@ -1156,7 +1173,6 @@ on_finish: function() {
  `;
 
   const dataAsString = jsPsych.data.get().csv();
-  const participantID = jsPsych.data.get().values()[0]?.participantID || "unknown";
   const filename = `SST_50first_data_${participantID}_${Date.now()}.csv`;
 
   fetch("https://pipe.jspsych.org/api/data/", {
