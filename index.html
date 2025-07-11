@@ -361,9 +361,9 @@ const final_score_screen = {
     practice_instructions, practice_block, reset_points,
     start_instructions, 
     block1, block2, break_screen, 
-    block3, block4, break_screen, 
-    block5, block6, break_screen, 
-    block7, block8,
+    //block3, block4, break_screen, 
+    //block5, block6, break_screen, 
+    //block7, block8,
     final_score_screen);
 
  // jsPsych.init({
@@ -418,13 +418,6 @@ const final_score_screen = {
 jsPsych.init({
  timeline: timeline,
  on_finish: function() {
-
- document.body.innerHTML = `
- <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; font-family: sans-serif; text-align: center;">
- <p style="font-size: 1.5em; margin-bottom: 1em;">You have finished Part 1! Please wait while your data saves and you are redirected to Part 2</p>
- </div>
- `;
-
  // Convert jsPsych data to CSV string
  const dataAsString = jsPsych.data.get().csv();
  const filename = `participant_${participantID}_${Date.now()}.csv`;
@@ -465,6 +458,11 @@ jsPsych.init({
  });
  } else {
  // Running on server - auto redirect
+ document.body.innerHTML = `
+ <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; font-family: sans-serif; text-align: center;">
+ <p style="font-size: 1.5em; margin-bottom: 1em;">You have finished Part 1! Please wait while your data saves and you are redirected to Part 2.</p>
+ </div>
+ `;
  window.location.href = `SST/experiment-50only.html?participantID=${participantID}`;
  }
  })
