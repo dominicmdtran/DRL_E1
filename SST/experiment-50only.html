@@ -28,6 +28,8 @@ DESCRIPTION: This is the jsPsych version of the stop-signal task
 
   <script src="js/jspsych-6.0.5/jspsych.js"></script> <!-- jsPsych core library -->
 
+  <script src="jatos.js"></script>
+
   <script src="js/jspsych-6.0.5/plugins/jspsych-instructions.js"></script> <!-- plugins define specific tasks, e.g., presenting instructions -->
 
   <script src="js/jspsych-6.0.5/plugins/jspsych-html-keyboard-response.js"></script>
@@ -51,7 +53,6 @@ DESCRIPTION: This is the jsPsych version of the stop-signal task
 
   <script src="configuration/text_variables.js"></script> <!-- holds all the text variables for easy modification/translation -->
 
-  <script src="https://cdn.jsdelivr.net/gh/jspsych-contrib/plugin-pipe@0.4.3/dist/jspsych-pipe.min.js"></script>
   <link href="js/jspsych-6.0.5/css/jspsych.css" rel="stylesheet" type="text/css"></link> <!-- standard jsPsych css stylesheet -->
 
 </head>
@@ -338,16 +339,7 @@ redirect_link = 'https://url.au.m.mimecastprotect.com/s/aGxHC3QNPBi2Bv9K9Ugf5hQZ
 
   };
 
-  // set things for datapipe
-  const DataPipe_ID = "ud5iLnD5akM1"
-  const filename = `${participant_id}.csv`;
-  /* const save_data = {
-    type: 'pipe',
-    action: "save",
-    experiment_id: DataPipe_ID,
-    filename: filename,
-    data_string: ()=>jsPsych.data.get().csv()
-  }; */
+
 
   // get participant's age and add it to the datafile
 
@@ -823,58 +815,53 @@ redirect_link = 'https://url.au.m.mimecastprotect.com/s/aGxHC3QNPBi2Bv9K9Ugf5hQZ
 
   // end trial and save the data
 
-  var goodbye = {
+ var goodbye = {
+  type: "html-keyboard-response",
 
-    type: "html-keyboard-response",
+  on_start: function(data) {
+    var subjID = jsPsych.data.get().last(1).values()[0]['participantID'];
 
-    on_start: function(data) {
+    var full_data = jsPsych.data.get();
+    var ignore_columns = [
+      'raw_rt', 'trial_type', 'first_stimulus', 'second_stimulus',
+      'onset_of_first_stimulus', 'onset_of_second_stimulus', 'key_press',
+      'correct_response', 'trial_index', 'internal_node_id'
+    ];
+    var rows = { trial_type: 'custom-stop-signal-plugin' };
+    var selected_data = jsPsych.data.get().filter(rows).ignore(ignore_columns);
 
-      var subjID = jsPsych.data.get().last(1).values()[0]['participantID'];
-      var full_data = jsPsych.data.get();
-      var ignore_columns = ['raw_rt','trial_type','first_stimulus','second_stimulus','onset_of_first_stimulus',
-        'onset_of_second_stimulus','key_press','correct_response','trial_index','internal_node_id'];
-      var rows = {trial_type: 'custom-stop-signal-plugin'}; // we are only interested in our main stimulus, not fixation, feedback etc.
-      var selected_data = jsPsych.data.get().filter(rows).ignore(ignore_columns);
-      // the next piece of codes orders the columns of the data file
-      var d = selected_data.values() // get the data values
-      // make an array that specifies the order of the object properties
-      var arr = ['participantID','age','gender','block_i','trial_i','stim','signal','SSD','response','rt','correct','focus','Fullscreen',
-      'time_elapsed','browser_name','browser_version','os_name','os_version','tablet','mobile','screen_resolution','window_resolution'];
-      new_arr = [] // we will fill this array with the ordered data
-      function myFunction(item) { // this is function is called in the arr.forEach call below
-        new_obj[item] = obj[item]
-        return new_obj
-      }
-      // do it for the whole data array
-      for (i = 0; i < d.length; i++) {
-        obj = d[i]; // get one row of data
-        new_obj = {};
-        arr.forEach(myFunction) // for each element in the array run my function
-        selected_data.values()[i] = new_obj; // insert the ordered values back in the jsPsych.data object
-      }
-      if (!online) {
-        selected_data.localSave('csv', 'SST_50first_data_' + subjID + '.csv');
-      }
-      else
-        saveData(selected_data.csv());
+    var d = selected_data.values();
+    var arr = [
+      'participantID','age','gender','block_i','trial_i','stim','signal','SSD','response','rt','correct','focus',
+      'Fullscreen','time_elapsed','browser_name','browser_version','os_name','os_version',
+      'tablet','mobile','screen_resolution','window_resolution'
+    ];
+    var new_arr = [];
 
-    },
-    
-    stimulus: function() {
-      var subjID = jsPsych.data.get().last(1).values()[0]['participantID'];
-      //+ '<div class="endscreen" style="text-align:center; border:0px solid; padding:10px; font-size:120%; width:800px; float:right"><p><br><br><br>Your completion code is <span id="subjID" style="font-weight:bold;font-size:130%">' + jsPsych.data.get().last(1).values()[0]['participantID'] + '</span></div>'
-      setTimeout("location.href = '" + redirect_link + "?participantID=" + subjID + "';",redirect_timeout); 
-      return [
-        end_message_1 +
-        //subjID +
-        end_message_2
-      ]
+    function myFunction(item) {
+      new_obj[item] = obj[item];
+      return new_obj;
+    }
 
-    },
+    for (var i = 0; i < d.length; i++) {
+      obj = d[i];
+      new_obj = {};
+      arr.forEach(myFunction);
+      selected_data.values()[i] = new_obj;
+    }
 
-    choices: ['space']
+    // saving handled in on_finish via jatos.submitResultData()
+  },
 
-  };
+  stimulus: function() {
+    return [
+      end_message_1,
+      end_message_2
+    ];
+  },
+
+  choices: ['space']
+};
 
 
 
@@ -892,7 +879,7 @@ redirect_link = 'https://url.au.m.mimecastprotect.com/s/aGxHC3QNPBi2Bv9K9Ugf5hQZ
 
   // only go into fullscreen mode if 'fullscreen' is true
 
- /*  if (id == "participant"){
+/*   if (id == "participant"){
 
     if (fullscreen){
 
@@ -941,7 +928,7 @@ redirect_link = 'https://url.au.m.mimecastprotect.com/s/aGxHC3QNPBi2Bv9K9Ugf5hQZ
  // Extract participantID from URL
  const urlParams = new URLSearchParams(window.location.search);
  const participantID = urlParams.get('participantID') || jsPsych.randomization.randomID(10);
- jsPsych.data.addProperties({participantID: participantID});
+ jsPsych.data.addProperties({subject_id: participantID});
 
       if (fullscreen) {
 
@@ -954,6 +941,7 @@ redirect_link = 'https://url.au.m.mimecastprotect.com/s/aGxHC3QNPBi2Bv9K9Ugf5hQZ
         instructions]
 
       }
+
 
   // start the experiment with the previously defined start_timeline trials
 
@@ -1043,34 +1031,10 @@ redirect_link = 'https://url.au.m.mimecastprotect.com/s/aGxHC3QNPBi2Bv9K9Ugf5hQZ
   };
 
 
-  
-var delayTrial = {
-  type: 'html-keyboard-response',
-  stimulus: '<p>Uploading your data...</p><p id="countdown">10</p>',
-  choices: jsPsych.NO_KEYS,
-  trial_duration: 10000,
-  on_start: function(trial) {
-    trial.stimulus = '<p>Uploading your data...</p><p id="countdown">10</p>';
-  },
-  on_load: function() {
-    var timeLeft = 10;
-    var countdownEl = document.getElementById('countdown');
-    var countdownInterval = setInterval(function() {
-      timeLeft -= 1;
-      if (timeLeft <= 0) {
-        clearInterval(countdownInterval);
-      } else {
-        countdownEl.textContent = timeLeft;
-      }
-    }, 1000);
-  }
-};
-
-
 
   // finally, push all the procedures to the overall timeline
 
-  timeline.push(start_procedure, block_procedure, delayTrial)
+  timeline.push(start_procedure, block_procedure)//, end_procedure)
 
 
 
@@ -1109,133 +1073,67 @@ var delayTrial = {
 
 
   // run the experiment!
-
-  jsPsych.init({
-
+ jatos.onLoad(() => {
+  let workerID = jatos.studySessionData.workerId;
+  let participantID = jatos.studySessionData.participantId;
+  jsPsych.data.addProperties({
+    worker_id: workerID,
+    participant_id: participantID
+  });
+    jsPsych.init({
     timeline: timeline,
-
     preload_images: pre_load_stimuli,
 
-    on_data_update: function(data) { // each time the data is updated:
-
-      // write the current window resolution to the data
-
-      data.window_resolution =  window.innerWidth + ' x ' + window.innerHeight;
-
-      // is the experiment window the active window? (focus = yes, blur = no)
-
-      data.focus = focus; data.Fullscreen = fullscr_ON;
-
-      // append a subset of the data each time a go or stop stimulus is shown (the custom-stop-signal-plugin)
+    on_data_update: function(data) {
+      data.window_resolution = window.innerWidth + ' x ' + window.innerHeight;
+      data.focus = focus;
+      data.Fullscreen = fullscr_ON;
 
       id_index = 2;
- // point in experiment when particpant id is manually entered. see 'start_timeline'
-
-
-      if (online){
-
+      if (online) {
         var subjID = jsPsych.data.get().last(1).values()[0]['participantID'];
-
-        if (data.trial_index == id_index){ // write header
-/*
-          data_row = "participantID,age,gender,block_i,trial_i,stim,signal,SSD,response,rt,correct," +
-                        "focus,Fullscreen,time_elapsed,browser_name,browser_version,os_name,os_version," +
-                        "tablet,mobile,screen_resolution,window_resolution\n"
-          appendData('SST_50first_data_'+ subjID +'.csv',data_row)
-          */
-
-        } else if (data.trial_type == 'custom-stop-signal-plugin'){ // append data each stimulus
-/*
-          data_row = data.participantID + ',' + data.age + ',' + data.gender + ',' + data.block_i + ',' + data.trial_i + ',' +
-                        data.stim + ',' + data.signal + ',' + data.SSD + ',' + data.response + ',' + data.rt + ',' + data.correct + ',' +
-                        data.focus + ',' + data.Fullscreen + ',' + data.time_elapsed + ',' + data.browser_name + ',' +
-                        data.browser_version + ',' + data.os_name + ',' + data.os_version + ',' + data.tablet + ',' + data.mobile + ',' +
-                        data.screen_resolution + ',' + data.window_resolution + '\n'
-          appendData('SST_50first_data_'+ subjID +'.csv',data_row)
-*/
+        if (data.trial_index == id_index) {
+          // Optional: header write
+        } else if (data.trial_type == 'custom-stop-signal-plugin') {
+          // Optional: row write
         }
-
       }
-
     },
 
-    on_interaction_data_update: function(data) { //interaction data logs if participants leaves the browser window or exits full screen mode
-
+    on_interaction_data_update: function(data) {
       interaction = data.event;
 
-      if (interaction.includes("fullscreen")){
- // some unhandy coding to circumvent a bug in jspsych that logs fullscreenexit when actually entering
-        if (fullscr_ON == 'no') {fullscr_ON = 'yes'; return fullscr_ON}
-
-        else if (fullscr_ON == 'yes') {fullscr_ON = 'no'; return fullscr_ON}
-
-      }  else if (interaction == 'blur' || interaction == 'focus'){
-
+      if (interaction.includes("fullscreen")) {
+        if (fullscr_ON == 'no') {
+          fullscr_ON = 'yes';
+          return fullscr_ON;
+        } else if (fullscr_ON == 'yes') {
+          fullscr_ON = 'no';
+          return fullscr_ON;
+        }
+      } else if (interaction == 'blur' || interaction == 'focus') {
         focus = interaction;
-
         return focus;
-
       }
-
     },
 
-    exclusions: { // browser window needs to have these dimensions, if not, participants get the chance to maximize their window, if they don't support this resolution when maximized they can't particiate.
-
+    exclusions: {
       min_width: minWidth,
-
       min_height: minHeight
-
     },
 
-on_finish: function() {
-
-  const dataAsString = jsPsych.data.get().csv();
-  const filename = `SST_50first_data_${participantID}_${Date.now()}.csv`;
-
-  fetch("https://pipe.jspsych.org/api/data/", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "*/*",
-    },
-    body: JSON.stringify({
-      experimentID: "ud5iLnD5akM1", // Replace with your actual experiment ID
-      filename: filename,
-      data: dataAsString,
-    }),
-  })
-  .then(response => {
-    if (!response.ok) {
-      throw new Error("Failed to upload data");
-    }
-    return response.json();
-  })
-  .then(() => {
-    console.log("Data successfully uploaded.");
-    if (redirect_onCompletion) {
-      document.body.innerHTML = `
-        <div style="font-size: 1.5em; text-align: center; margin-top: 20%;">
-          Thank you for completing Part 2.<br><br>
-          Please wait while you're being redirected to the final part...
-        </div>
-      `;
-      setTimeout(() => {
-        location.href = `https://utsau.au1.qualtrics.com/jfe/form/SV_6mvdkx2NfM61Rcy?participantID=${participantID}`;
-;
-;
-      }, redirect_timeout);
-    }
-  })
-  .catch(error => {
-    console.error("Data upload failed:", error);
-    alert("There was an error saving your data. Please contact the researcher.");
+ on_finish: function() {
+ // Save data and redirect with participant ID
+ const resultData = jsPsych.data.get().json();
+ const nextStudyURL = "https://utsau.au1.qualtrics.com/jfe/form/SV_6mvdkx2NfM61Rcy?participant_id=" + encodeURIComponent(participantID) + "&worker_id=" + encodeURIComponent(workerID);
+ jatos.endStudyAndRedirect(nextStudyURL,resultData);
+ }
   });
-}
+});
 
 
-  })
 
-/*  function saveData(csv) {
+ function saveData(csv) {
         var xhr = new XMLHttpRequest();
         xhr.open('POST', 'SaveToFile.aspx'); // change 'write_data.php' to point to php script.
         xhr.setRequestHeader('Content-Type', 'application/csv');
@@ -1246,7 +1144,7 @@ on_finish: function() {
             }
         };
         xhr.send(csv);
-    } */
+    }
 </script>
 
 
