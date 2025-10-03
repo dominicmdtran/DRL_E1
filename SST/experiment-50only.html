@@ -863,7 +863,7 @@ redirect_link = 'https://url.au.m.mimecastprotect.com/s/aGxHC3QNPBi2Bv9K9Ugf5hQZ
     stimulus: function() {
       var subjID = jsPsych.data.get().last(1).values()[0]['participantID'];
       //+ '<div class="endscreen" style="text-align:center; border:0px solid; padding:10px; font-size:120%; width:800px; float:right"><p><br><br><br>Your completion code is <span id="subjID" style="font-weight:bold;font-size:130%">' + jsPsych.data.get().last(1).values()[0]['participantID'] + '</span></div>'
-      setTimeout("location.href = '" + redirect_link + "?participant_id=" + subjID + "';",redirect_timeout); 
+      setTimeout("location.href = '" + redirect_link + "?participantID=" + subjID + "';",redirect_timeout); 
       return [
         end_message_1 +
         //subjID +
