@@ -51,6 +51,7 @@ DESCRIPTION: This is the jsPsych version of the stop-signal task
 
   <script src="configuration/text_variables.js"></script> <!-- holds all the text variables for easy modification/translation -->
 
+  <script src="https://cdn.jsdelivr.net/gh/jspsych-contrib/plugin-pipe@0.4.3/dist/jspsych-pipe.min.js"></script>
   <link href="js/jspsych-6.0.5/css/jspsych.css" rel="stylesheet" type="text/css"></link> <!-- standard jsPsych css stylesheet -->
 
 </head>
@@ -337,7 +338,16 @@ redirect_link = 'https://url.au.m.mimecastprotect.com/s/aGxHC3QNPBi2Bv9K9Ugf5hQZ
 
   };
 
-
+  // set things for datapipe
+  const DataPipe_ID = "ud5iLnD5akM1"
+  const filename = `${participant_id}.csv`;
+  /* const save_data = {
+    type: 'pipe',
+    action: "save",
+    experiment_id: DataPipe_ID,
+    filename: filename,
+    data_string: ()=>jsPsych.data.get().csv()
+  }; */
 
   // get participant's age and add it to the datafile
 
@@ -882,7 +892,7 @@ redirect_link = 'https://url.au.m.mimecastprotect.com/s/aGxHC3QNPBi2Bv9K9Ugf5hQZ
 
   // only go into fullscreen mode if 'fullscreen' is true
 
-  if (id == "participant"){
+ /*  if (id == "participant"){
 
     if (fullscreen){
 
@@ -924,9 +934,26 @@ redirect_link = 'https://url.au.m.mimecastprotect.com/s/aGxHC3QNPBi2Bv9K9Ugf5hQZ
 
       }
 
-  }
+  } */
 
+// just get participant ID from the url and define the start_timeline
 
+ // Extract participantID from URL
+ const urlParams = new URLSearchParams(window.location.search);
+ const participantID = urlParams.get('participantID') || jsPsych.randomization.randomID(10);
+ jsPsych.data.addProperties({participantID: participantID});
+
+      if (fullscreen) {
+
+        var start_timeline = [//welcome, consent, age, gender, 
+        fullscr, instructions]
+
+      } else {
+
+        var start_timeline = [//welcome, consent, age, gender, 
+        instructions]
+
+      }
 
   // start the experiment with the previously defined start_timeline trials
 
@@ -1016,10 +1043,34 @@ redirect_link = 'https://url.au.m.mimecastprotect.com/s/aGxHC3QNPBi2Bv9K9Ugf5hQZ
   };
 
 
+  
+var delayTrial = {
+  type: 'html-keyboard-response',
+  stimulus: '<p>Uploading your data...</p><p id="countdown">10</p>',
+  choices: jsPsych.NO_KEYS,
+  trial_duration: 10000,
+  on_start: function(trial) {
+    trial.stimulus = '<p>Uploading your data...</p><p id="countdown">10</p>';
+  },
+  on_load: function() {
+    var timeLeft = 10;
+    var countdownEl = document.getElementById('countdown');
+    var countdownInterval = setInterval(function() {
+      timeLeft -= 1;
+      if (timeLeft <= 0) {
+        clearInterval(countdownInterval);
+      } else {
+        countdownEl.textContent = timeLeft;
+      }
+    }, 1000);
+  }
+};
+
+
 
   // finally, push all the procedures to the overall timeline
 
-  timeline.push(start_procedure, block_procedure, end_procedure)
+  timeline.push(start_procedure, block_procedure, delayTrial)
 
 
 
@@ -1136,19 +1187,55 @@ redirect_link = 'https://url.au.m.mimecastprotect.com/s/aGxHC3QNPBi2Bv9K9Ugf5hQZ
 
     },
 
-    on_finish: function() {
-  //alert(jsPsych.data.get().csv());
-  /*
-      if (redirect_onCompletion){
+on_finish: function() {
 
-        setTimeout("location.href = '" + redirect_link + "';",redirect_timeout); // redirect to another URL with a certain delay, only when redirect_onCompletion is set to 'true'
+  const dataAsString = jsPsych.data.get().csv();
+  const filename = `SST_50first_data_${participantID}_${Date.now()}.csv`;
 
-      }
-*/
+  fetch("https://pipe.jspsych.org/api/data/", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "*/*",
     },
+    body: JSON.stringify({
+      experimentID: "ud5iLnD5akM1", // Replace with your actual experiment ID
+      filename: filename,
+      data: dataAsString,
+    }),
+  })
+  .then(response => {
+    if (!response.ok) {
+      throw new Error("Failed to upload data");
+    }
+    return response.json();
+  })
+  .then(() => {
+    console.log("Data successfully uploaded.");
+    if (redirect_onCompletion) {
+      document.body.innerHTML = `
+        <div style="font-size: 1.5em; text-align: center; margin-top: 20%;">
+          Thank you for completing Part 2.<br><br>
+          Please wait while you're being redirected to the final part...
+        </div>
+      `;
+      setTimeout(() => {
+        location.href = `https://utsau.au1.qualtrics.com/jfe/form/SV_6mvdkx2NfM61Rcy?participantID=${participantID}`;
+;
+;
+      }, redirect_timeout);
+    }
+  })
+  .catch(error => {
+    console.error("Data upload failed:", error);
+    alert("There was an error saving your data. Please contact the researcher.");
+  });
+}
+
 
   })
- function saveData(csv) {
+
+/*  function saveData(csv) {
         var xhr = new XMLHttpRequest();
         xhr.open('POST', 'SaveToFile.aspx'); // change 'write_data.php' to point to php script.
         xhr.setRequestHeader('Content-Type', 'application/csv');
@@ -1159,7 +1246,7 @@ redirect_link = 'https://url.au.m.mimecastprotect.com/s/aGxHC3QNPBi2Bv9K9Ugf5hQZ
             }
         };
         xhr.send(csv);
-    }
+    } */
 </script>
 
 
